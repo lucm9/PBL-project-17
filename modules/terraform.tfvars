@@ -10,6 +10,8 @@ preferred_number_of_private_subnets = 4
 
 preferred_number_of_public_subnets = 2
 
+name = "Xashy"
+
 environment = "DEV"
 
 ami = "ami-09040d770ffe2224f"

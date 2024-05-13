@@ -1,9 +1,7 @@
 variable "region" {
-  default = "us-east-2"
 }
 
 variable "vpc_cidr" {
-  default = "10.10.0.0/16"
 }
 
 variable "enable_dns_support" {
@@ -17,18 +15,17 @@ variable "enable_dns_hostnames" {
 variable "preferred_number_of_public_subnets" {
   type        = number
   description = "The number of public subnets"
-  default     = 2
+
 }
 
 variable "preferred_number_of_private_subnets" {
   type        = number
   description = "The number of private subnets"
-  default     = 4
+
 }
 
 variable "name" {
-  type    = string
-  default = "ACS"
+  type = string
 }
 
 variable "tags" {
