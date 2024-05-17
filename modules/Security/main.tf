@@ -1,5 +1,5 @@
 # create all security groups dynamically
-resource "aws_security_group" "SPR" {
+resource "aws_security_group" "ACS" {
   for_each    = local.security_groups
   name        = each.value.name
   description = each.value.description

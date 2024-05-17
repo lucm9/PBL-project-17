@@ -10,7 +10,7 @@ resource "aws_instance" "Jenkins" {
  tags = merge(
     var.tags,
     {
-      Name = "SPR-Jenkins"
+      Name = "ACS-Jenkins"
     },
   )
 }
