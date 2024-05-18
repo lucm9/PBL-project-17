@@ -1,28 +1,33 @@
-# External Application Load Balancer (ALB) for serving external traffic
+###################################################################################
+# ----------------------------
+#External Load Balancers for webservers
+#---------------------------------
+####################################################################################
 resource "aws_lb" "ext-alb" {
-  name               = "ext-alb"
-  internal           = false
-  security_groups    = [aws_security_group.ext-alb-sg.id]
-  subnets            = [aws_subnet.public[0].id, aws_subnet.public[1].id]
-  ip_address_type    = "ipv4"
-  load_balancer_type = "application"
+  name     = var.name
+  internal = false
+  security_groups = [
+    var.public-sg
+  ]
+
+  subnets = [
+    var.public-sbn-1,
+    var.public-sbn-2
+  ]
 
   tags = merge(
     var.tags,
     {
-      Name = "ACS-ext-alb"
+      Name = var.name
     },
   )
+
+  ip_address_type    = var.ip_address_type
+  load_balancer_type = var.load_balancer_type
 }
 
-# Target Group for routing traffic to nginx reverse proxy
-resource "aws_lb_target_group" "nginx-tgt" {
-  name        = "nginx-tgt"
-  port        = 443
-  protocol    = "HTTPS"
-  target_type = "instance"
-  vpc_id      = aws_vpc.main.id
 
+resource "aws_lb_target_group" "nginx-tgt" {
   health_check {
     interval            = 10
     path                = "/healthstatus"
@@ -31,10 +36,14 @@ resource "aws_lb_target_group" "nginx-tgt" {
     healthy_threshold   = 5
     unhealthy_threshold = 2
   }
+  name        = "nginx-tgt"
+  port        = 443
+  protocol    = "HTTPS"
+  target_type = "instance"
+  vpc_id      = var.vpc_id
 }
 
-# Listener for HTTPS traffic on the ALB, forwarding traffic to the nginx target group
-resource "aws_lb_listener" "nginx-listener" {
+resource "aws_lb_listener" "nginx-listner" {
   load_balancer_arn = aws_lb.ext-alb.arn
   port              = 443
   protocol          = "HTTPS"
@@ -46,31 +55,56 @@ resource "aws_lb_listener" "nginx-listener" {
   }
 }
 
-# Internal Application Load Balancer (ALB) for serving internal traffic
-resource "aws_lb" "int-alb" {
-  name               = "int-alb"
-  internal           = true
-  security_groups    = [aws_security_group.int-alb-sg.id]
-  subnets            = [aws_subnet.private[0].id, aws_subnet.private[1].id]
-  ip_address_type    = "ipv4"
-  load_balancer_type = "application"
+###################################################################################
+# ----------------------------
+#Internal Load Balancers for webservers
+#---------------------------------
+####################################################################################
+resource "aws_lb" "ialb" {
+  name     = "ialb"
+  internal = true
+  security_groups = [
+    var.private-sg
+  ]
+
+  subnets = [
+    var.private-sbn-1,
+    var.private-sbn-2
+  ]
 
   tags = merge(
     var.tags,
     {
-      Name = "ACS-int-alb"
+      Name = "xa-int-alb"
     },
   )
+
+  ip_address_type    = var.ip_address_type
+  load_balancer_type = var.load_balancer_type
 }
 
-# Target Group for routing traffic to WordPress instances
+# --- target group  for wordpress -------
+
 resource "aws_lb_target_group" "wordpress-tgt" {
+  health_check {
+    interval            = 10
+    path                = "/healthstatus"
+    protocol            = "HTTPS"
+    timeout             = 5
+    healthy_threshold   = 5
+    unhealthy_threshold = 2
+  }
+
   name        = "wordpress-tgt"
   port        = 443
   protocol    = "HTTPS"
   target_type = "instance"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
+}
 
+# --- target group for tooling -------
+
+resource "aws_lb_target_group" "tooling-tgt" {
   health_check {
     interval            = 10
     path                = "/healthstatus"
@@ -79,29 +113,19 @@ resource "aws_lb_target_group" "wordpress-tgt" {
     healthy_threshold   = 5
     unhealthy_threshold = 2
   }
-}
 
-# Target Group for routing traffic to tooling instances
-resource "aws_lb_target_group" "tooling-tgt" {
   name        = "tooling-tgt"
   port        = 443
   protocol    = "HTTPS"
   target_type = "instance"
-  vpc_id      = aws_vpc.main.id
-
-  health_check {
-    interval            = 10
-    path                = "/healthstatus"
-    protocol            = "HTTPS"
-    timeout             = 5
-    healthy_threshold   = 5
-    unhealthy_threshold = 2
-  }
+  vpc_id      = var.vpc_id
 }
 
-# Listener for HTTPS traffic on the internal ALB, forwarding traffic to the WordPress target group by default
+# For this aspect a single listener was created for the wordpress which is default,
+# A rule was created to route traffic to tooling when the host header changes
+
 resource "aws_lb_listener" "web-listener" {
-  load_balancer_arn = aws_lb.int-alb.arn
+  load_balancer_arn = aws_lb.ialb.arn
   port              = 443
   protocol          = "HTTPS"
   certificate_arn   = aws_acm_certificate_validation.initiativesolution.certificate_arn
@@ -112,7 +136,8 @@ resource "aws_lb_listener" "web-listener" {
   }
 }
 
-# Listener rule for routing traffic to the tooling target group based on the host header
+# listener rule for tooling target
+
 resource "aws_lb_listener_rule" "tooling-listener" {
   listener_arn = aws_lb_listener.web-listener.arn
   priority     = 99
@@ -128,4 +153,3 @@ resource "aws_lb_listener_rule" "tooling-listener" {
     }
   }
 }
-

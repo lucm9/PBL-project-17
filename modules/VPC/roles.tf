@@ -1,53 +1,60 @@
-resource "aws_iam_role" "ec2_role" {
+resource "aws_iam_role" "ec2_instance_role" {
   name = "ec2_instance_role"
   assume_role_policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement" : [
+    Version = "2012-10-17"
+    Statement = [
       {
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "ec2.amazonaws.com"
-        },
-        "Action" : "sts:AssumeRole"
-      }
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
     ]
   })
 
-  tags = {
-    Name        = "aws assume role"
-    Environment = var.environment
-  }
+  tags = merge(
+    var.tags,
+    {
+      Name = format("%s-aws-assume-role", var.name)
+    },
+  )
 }
+
 
 resource "aws_iam_policy" "policy" {
   name        = "ec2_instance_policy"
-  description = "A test Policy"
+  description = "A test policy"
   policy = jsonencode({
-    Version = "2012-10-17",
+    Version = "2012-10-17"
     Statement = [
       {
         Action = [
           "ec2:Describe*",
-        ],
-        Effect   = "Allow",
-        Resource = "*",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
       },
-    ],
+    ]
+
   })
 
-  tags = {
-    Name        = "aws assume policy"
-    Environment = var.environment
-  }
+  tags = merge(
+    var.tags,
+    {
+      Name = format("%s-aws-assume-policy", var.name)
+    },
+  )
+
+}
+
+resource "aws_iam_role_policy_attachment" "test-attach" {
+  role       = aws_iam_role.ec2_instance_role.name
+  policy_arn = aws_iam_policy.policy.arn
 }
 
 resource "aws_iam_instance_profile" "ip" {
-  name = "EC2InstanceProfile"
-  role = aws_iam_role.ec2_role.name
-}
-
-resource "aws_iam_policy_attachment" "test-attach" {
-  name       = "test-attach"
-  roles      = [aws_iam_role.ec2_role.name] # Corrected resource name
-  policy_arn = aws_iam_policy.policy.arn
+  name = "aws_instance_profile_test"
+  role = aws_iam_role.ec2_instance_role.name
 }

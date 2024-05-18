@@ -1,7 +1,9 @@
-resource "aws_launch_template" "bastion-launch-template" {
-  image_id               = var.ami-bastion
+# launch template for wordpress
+
+resource "aws_launch_template" "wordpress-launch-template" {
+  image_id               = var.ami-web
   instance_type          = "t2.micro"
-  vpc_security_group_ids = var.bastion-sg
+  vpc_security_group_ids = var.web-sg
 
   iam_instance_profile {
     name = var.instance_profile
@@ -23,20 +25,20 @@ resource "aws_launch_template" "bastion-launch-template" {
     tags = merge(
       var.tags,
       {
-        Name = "bastion-launch-template"
+        Name = "XA-wordpress"
       },
     )
+
   }
 
-  user_data = filebase64("${path.module}/bastion.sh")
+  user_data = filebase64("${path.module}/wordpress.sh")
 }
 
-# launch template for nginx
-
-resource "aws_launch_template" "nginx-launch-template" {
-  image_id               = var.ami-nginx
+# launch template for toooling
+resource "aws_launch_template" "tooling-launch-template" {
+  image_id               = var.ami-web
   instance_type          = "t2.micro"
-  vpc_security_group_ids = var.nginx-sg
+  vpc_security_group_ids = var.web-sg
 
   iam_instance_profile {
     name = var.instance_profile
@@ -58,10 +60,11 @@ resource "aws_launch_template" "nginx-launch-template" {
     tags = merge(
       var.tags,
       {
-        Name = "nginx-launch-template"
+        Name = "XA-tooling"
       },
     )
+
   }
 
-  user_data = filebase64("${path.module}/nginx.sh")
+  user_data = filebase64("${path.module}/tooling.sh")
 }

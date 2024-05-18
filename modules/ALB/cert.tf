@@ -1,4 +1,4 @@
-# The entire section create a certiface, public zone, and validate the certificate using DNS method
+# The entire section creates a certificate, public zone, and validates the certificate using the DNS method
 
 # Create the certificate using a wildcard for all the domains created in initiativesolution.com
 resource "aws_acm_certificate" "initiativesolution" {
@@ -6,13 +6,13 @@ resource "aws_acm_certificate" "initiativesolution" {
   validation_method = "DNS"
 }
 
-# calling the hosted zone
+# Calling the hosted zone
 data "aws_route53_zone" "initiativesolution" {
   name         = "initiativesolution.com"
   private_zone = false
 }
 
-# selecting validation method
+# Selecting validation method
 resource "aws_route53_record" "initiativesolution" {
   for_each = {
     for dvo in aws_acm_certificate.initiativesolution.domain_validation_options : dvo.domain_name => {
@@ -30,13 +30,13 @@ resource "aws_route53_record" "initiativesolution" {
   zone_id         = data.aws_route53_zone.initiativesolution.zone_id
 }
 
-# validate the certificate through DNS method
+# Validate the certificate through DNS method
 resource "aws_acm_certificate_validation" "initiativesolution" {
   certificate_arn         = aws_acm_certificate.initiativesolution.arn
   validation_record_fqdns = [for record in aws_route53_record.initiativesolution : record.fqdn]
 }
 
-# create records for tooling
+# Create records for tooling
 resource "aws_route53_record" "tooling" {
   zone_id = data.aws_route53_zone.initiativesolution.zone_id
   name    = "tooling.initiativesolution.com"
@@ -49,7 +49,7 @@ resource "aws_route53_record" "tooling" {
   }
 }
 
-# create records for wordpress
+# Create records for WordPress
 resource "aws_route53_record" "wordpress" {
   zone_id = data.aws_route53_zone.initiativesolution.zone_id
   name    = "wordpress.initiativesolution.com"

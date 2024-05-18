@@ -1,3 +1,20 @@
+# Creating bucket for S3
+module "s3_bucket" {
+  source = "./modules/S3"
+  bucket_name       = var.bucket_name
+  versioning_status = var.versioning_status
+}
+
+# Output for S3 bucket ID
+output "bucket_id" {
+  value = module.s3_bucket.bucket_id
+}
+
+# Output for S3 bucket ARN
+output "bucket_arn" {
+  value = module.s3_bucket.bucket_arn
+}
+
 module "VPC" {
   source                              = "./modules/VPC"
   region                              = var.region
@@ -6,14 +23,18 @@ module "VPC" {
   enable_dns_hostnames                = var.enable_dns_hostnames
   preferred_number_of_public_subnets  = var.preferred_number_of_public_subnets
   preferred_number_of_private_subnets = var.preferred_number_of_private_subnets
-  private_subnets                     = [for i in range(1, 8, 2) : cidrsubnet(var.vpc_cidr, 8, i)] # for loop to generate the cidrsubnets
-  public_subnets                      = [for i in range(2, 5, 2) : cidrsubnet(var.vpc_cidr, 8, i)] # for loop to generate the cidrsubnets
+  public_subnets                      = [for i in range(2, 5, 2) : cidrsubnet(var.vpc_cidr, 8, i)]
+  # private_subnets                     = [for i in range(1, 8, 2) : cidrsubnet(var.vpc_cidr, 8, i)]
+  private_subnets = [for i in range(1, 8, 2) : cidrsubnet(var.vpc_cidr, 8, i)]
+  # private_subnets                     = cidrsubnet(var.vpc_cidr, 8, count.index+2)
+   name                                = var.name
+   tags                                = var.tags
 }
 
 module "ALB" {
   source             = "./modules/ALB"
-  name               = "ACS-ext-alb"
-  vpc_id             = module.VPC.vpc_id #output.tf there have the vpc_id for our alb module to consume that we do "module.modulename.outputname"
+  name               = "LEE-ext-alb"
+  vpc_id             = module.VPC.vpc_id
   public-sg          = module.security.ALB-sg
   private-sg         = module.security.IALB-sg
   public-sbn-1       = module.VPC.public_subnets-1
@@ -62,6 +83,7 @@ module "EFS" {
 
 module "RDS" {
   source          = "./modules/RDS"
+  db_name          = var.db_name
   db-password     = var.db-password
   db-username     = var.db-username
   db-sg           = [module.security.datalayer-sg]

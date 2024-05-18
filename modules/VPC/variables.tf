@@ -2,6 +2,7 @@ variable "region" {
 }
 
 variable "vpc_cidr" {
+  type = string
 }
 
 variable "enable_dns_support" {
@@ -13,30 +14,22 @@ variable "enable_dns_hostnames" {
 }
 
 variable "preferred_number_of_public_subnets" {
-  type        = number
-  description = "The number of public subnets"
-
+  type = number
 }
 
 variable "preferred_number_of_private_subnets" {
-  type        = number
-  description = "The number of private subnets"
-
+  type = number
 }
 
 variable "private_subnets" {
   type        = list(any)
   description = "List of private subnets"
-
 }
 
 variable "public_subnets" {
   type        = list(any)
-  description = "List of public subnets"
-}
+  description = "list of public subnets"
 
-variable "name" {
-  type = string
 }
 
 variable "tags" {
@@ -45,8 +38,11 @@ variable "tags" {
   default     = {}
 }
 
-variable "environment" {
+variable "name" {
+  description = "Resource name prefix"
   type        = string
-  description = "Environment"
 }
 
+variable "environment" {
+  default = "true"
+}

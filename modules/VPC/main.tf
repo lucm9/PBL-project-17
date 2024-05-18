@@ -10,21 +10,26 @@ resource "aws_vpc" "main" {
       Name = format("%s-VPC", var.name)
     },
   )
-
 }
 
-# Get list of availability zones 
+# Get list of availability zones
 data "aws_availability_zones" "available" {
   state = "available"
 }
 
-#SUBNETS (PUBLIC SUBNET)
+# Calculate the number of subnets to create
+locals {
+  number_of_public_subnets  = var.preferred_number_of_public_subnets != null ? var.preferred_number_of_public_subnets : length(data.aws_availability_zones.available.names)
+  number_of_private_subnets = var.preferred_number_of_private_subnets != null ? var.preferred_number_of_private_subnets : length(data.aws_availability_zones.available.names)
+}
+
+# SUBNETS (PUBLIC SUBNET)
 resource "aws_subnet" "public" {
-  count                   = var.preferred_number_of_public_subnets == null ? length(data.aws_availability_zones.available.names) : var.preferred_number_of_public_subnets
+  count                   = local.number_of_public_subnets
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.public_subnets[count.index]
   map_public_ip_on_launch = true
-  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  availability_zone       = data.aws_availability_zones.available.names[count.index % length(data.aws_availability_zones.available.names)]
 
   tags = merge(
     var.tags,
@@ -33,14 +38,14 @@ resource "aws_subnet" "public" {
     },
   )
 }
-#SUBNETS (PRIVATE SUBNET)
 
+# SUBNETS (PRIVATE SUBNET)
 resource "aws_subnet" "private" {
-  count                   = var.preferred_number_of_private_subnets == null ? length(data.aws_availability_zones.available.names) : var.preferred_number_of_private_subnets
+  count                   = local.number_of_private_subnets
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.private_subnets[count.index]
   map_public_ip_on_launch = false
-  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  availability_zone       = data.aws_availability_zones.available.names[count.index % length(data.aws_availability_zones.available.names)]
 
   tags = merge(
     var.tags,
@@ -49,4 +54,3 @@ resource "aws_subnet" "private" {
     },
   )
 }
-
